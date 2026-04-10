@@ -4,3 +4,4 @@ numpy
 joblib
 earthengine-api
 gunicorn
+scikit-learn
