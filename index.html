@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Geo-AI Soil Intelligence</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    display: flex;
+    background: #eef3f8;
+}
+
+/* MAP */
+#map {
+    width: 65%;
+    height: 100vh;
+}
+
+/* DASHBOARD */
+#dashboard {
+    width: 35%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* HEADER */
+.header {
+    padding: 15px 20px;
+    background: linear-gradient(135deg, #2e7d32, #66bb6a);
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+/* CONTENT */
+.content {
+    padding: 15px;
+    overflow-y: auto;
+}
+
+/* KPI CARDS */
+.kpi-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.kpi {
+    flex: 1;
+    background: white;
+    padding: 12px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+.kpi .value {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.kpi .label {
+    font-size: 12px;
+    color: #777;
+}
+
+/* SECTION CARDS */
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+}
+
+.card h3 {
+    margin: 0 0 10px;
+    color: #2e7d32;
+}
+
+/* ROW */
+.row {
+    display: flex;
+    justify-content: space-between;
+    margin: 5px 0;
+}
+
+.label {
+    color: #555;
+}
+
+.value {
+    font-weight: bold;
+}
+
+/* LOADING */
+.loading {
+    text-align: center;
+    margin-top: 50px;
+    color: #777;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="map"></div>
+
+<div id="dashboard">
+    <div class="header">🌱 Geo-AI Soil Intelligence</div>
+    <div class="content" id="content">
+        <div class="loading">Click on map to view data</div>
+    </div>
+</div>
+
+<script>
+
+var map = L.map('map').setView([10.5, 76.2], 7);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+let keralaLayer;
+let keralaLoaded = false;
+
+fetch("kerala.geojson")
+.then(res => res.json())
+.then(data => {
+    keralaLayer = L.geoJSON(data, {
+        style: { color: "#2e7d32", weight: 2 }
+    }).addTo(map);
+
+    keralaLoaded = true;
+});
+
+function isInsideKerala(lat, lon) {
+    let point = turf.point([lon, lat]);
+    let inside = false;
+
+    keralaLayer.eachLayer(function(layer) {
+        if (turf.booleanPointInPolygon(point, layer.feature)) {
+            inside = true;
+        }
+    });
+
+    return inside;
+}
+
+map.on('click', function(e) {
+
+    if (!keralaLoaded) return;
+
+    let lat = e.latlng.lat;
+    let lon = e.latlng.lng;
+    let insideKerala = isInsideKerala(lat, lon);
+
+    document.getElementById("content").innerHTML = "<div class='loading'>⏳ Loading...</div>";
+
+    fetch("http://127.0.0.1:5000/predict", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ lat, lon })
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        let nutrients = insideKerala ? `
+        <div class="card">
+            <h3>🌱 Macronutrients</h3>
+            <div class="row"><span class="label">N</span><span class="value">${data.N?.toFixed(2)}</span></div>
+            <div class="row"><span class="label">P</span><span class="value">${data.P?.toFixed(2)}</span></div>
+            <div class="row"><span class="label">K</span><span class="value">${data.K?.toFixed(2)}</span></div>
+        </div>
+
+        <div class="card">
+            <h3>🧪 Micronutrients</h3>
+            <div class="row"><span class="label">Zn</span><span class="value">${data.Zn?.toFixed(2)}</span></div>
+            <div class="row"><span class="label">Fe</span><span class="value">${data.Fe?.toFixed(2)}</span></div>
+            <div class="row"><span class="label">Mn</span><span class="value">${data.Mn?.toFixed(2)}</span></div>
+            <div class="row"><span class="label">Cu</span><span class="value">${data.Cu?.toFixed(2)}</span></div>
+            <div class="row"><span class="label">B</span><span class="value">${data.B?.toFixed(2)}</span></div>
+        </div>
+
+        <div class="card">
+            <h3>⚗️ Soil Properties</h3>
+            <div class="row"><span class="label">pH</span><span class="value">${data.pH?.toFixed(2)}</span></div>
+            <div class="row"><span class="label">EC</span><span class="value">${data.EC?.toFixed(2)}</span></div>
+            <div class="row"><span class="label">Organic C</span><span class="value">${data.Org_C?.toFixed(2)}</span></div>
+        </div>
+        ` : `
+        <div class="card">
+            <h3>⚠️ Nutrient Data</h3>
+            Not available outside Kerala
+        </div>
+        `;
+
+        document.getElementById("content").innerHTML = `
+
+        <!-- KPI -->
+        <div class="kpi-container">
+            <div class="kpi">
+                <div class="value">${data.pH?.toFixed(2)}</div>
+                <div class="label">pH</div>
+            </div>
+            <div class="kpi">
+                <div class="value">${data.N?.toFixed(0)}</div>
+                <div class="label">Nitrogen</div>
+            </div>
+            <div class="kpi">
+                <div class="value">${data.NDVI?.toFixed(2)}</div>
+                <div class="label">NDVI</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>📍 Location</h3>
+            ${lat.toFixed(3)}, ${lon.toFixed(3)}
+        </div>
+
+        ${nutrients}
+	<div class="card">
+    		<h3>🌾 Crop Recommendation</h3>
+    		<div style="font-size:18px; font-weight:bold; color:#2e7d32;">
+       		 ${data.Crop_Recommendation}
+    		</div>
+	</div>
+        <div class="card">
+            <h3>🌍 Satellite Data</h3>
+            <div class="row"><span class="label">NDVI</span><span class="value">${data.NDVI?.toFixed(2)}</span></div>
+            <div class="row"><span class="label">Elevation</span><span class="value">${data.Elevation?.toFixed(0)} m</span></div>
+            <div class="row"><span class="label">Rainfall</span><span class="value">${data.Rainfall?.toFixed(2)}</span></div>
+            <div class="row"><span class="label">Temp Min</span><span class="value">${data.Min_Temp?.toFixed(2)} °C</span></div>
+            <div class="row"><span class="label">Temp Max</span><span class="value">${data.Max_Temp?.toFixed(2)} °C</span></div>
+        </div>
+        `;
+    });
+
+});
+
+</script>
+
+</body>
+</html>

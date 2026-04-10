@@ -1,0 +1,202 @@
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import joblib
+import numpy as np
+import ee
+import datetime
+
+app = Flask(__name__)   # ✅ FIRST create app
+CORS(app)  
+
+# ✅ Initialize Google Earth Engine
+ee.Initialize(project='soil-nutrient-ai')  # 🔥 replace this
+
+# ✅ Load trained ML model
+model = joblib.load("soil_model.pkl")
+#//////////
+def recommend_crop(data):
+    N = data.get("N", 0)
+    P = data.get("P", 0)
+    K = data.get("K", 0)
+    pH = data.get("pH", 7)
+    ndvi = data.get("NDVI", 0)
+
+    if pH < 5.5:
+        return "Rubber, Tea"
+    elif 5.5 <= pH <= 6.5:
+        if ndvi > 0.5:
+            return "Rice, Banana"
+        else:
+            return "Groundnut, Pulses"
+    elif pH > 6.5:
+        return "Coconut, Vegetables"
+
+    return "No clear recommendation"
+# =========================
+# 🌱 NDVI (Sentinel-2)
+# =========================
+def get_ndvi(lat, lon):
+    point = ee.Geometry.Point([lon, lat])
+
+    today = datetime.date.today()
+    start = (today - datetime.timedelta(days=10)).strftime('%Y-%m-%d')
+    end = today.strftime('%Y-%m-%d')
+
+    collection = ee.ImageCollection("COPERNICUS/S2_HARMONIZED") \
+        .filterBounds(point) \
+        .filterDate(start, end) \
+        .sort('system:time_start', False) \
+        .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20)) \
+        .select(['B4', 'B8'])
+
+    image = collection.first()
+
+    ndvi = image.normalizedDifference(['B8', 'B4'])
+
+    value = ndvi.reduceRegion(
+        reducer=ee.Reducer.mean(),
+        geometry=point,
+        scale=10
+    )
+
+    return value.getInfo().get('nd', 0)
+
+
+# =========================
+# 🏔️ Elevation (DEM)
+# =========================
+def get_elevation(lat, lon):
+    point = ee.Geometry.Point([lon, lat])
+
+    dataset = ee.Image("USGS/SRTMGL1_003")
+
+    value = dataset.reduceRegion(
+        reducer=ee.Reducer.mean(),
+        geometry=point,
+        scale=30
+    )
+
+    return value.getInfo().get('elevation', 0)
+
+
+# =========================
+# 🌧️ Rainfall (Last 7 days)
+# =========================
+def get_rainfall(lat, lon):
+    point = ee.Geometry.Point([lon, lat])
+
+    today = datetime.date.today()
+    start = (today - datetime.timedelta(days=7)).strftime('%Y-%m-%d')
+    end = today.strftime('%Y-%m-%d')
+
+    collection = ee.ImageCollection("UCSB-CHG/CHIRPS/DAILY") \
+        .filterBounds(point) \
+        .filterDate(start, end)
+
+    rainfall = collection.sum()
+
+    value = rainfall.reduceRegion(
+        reducer=ee.Reducer.mean(),
+        geometry=point,
+        scale=5000
+    )
+
+    return value.getInfo().get('precipitation', 0)
+
+def get_temperature(lat, lon):
+    point = ee.Geometry.Point([lon, lat])
+
+    today = datetime.date.today()
+    start = (today - datetime.timedelta(days=7)).strftime('%Y-%m-%d')
+    end = today.strftime('%Y-%m-%d')
+
+    collection = ee.ImageCollection("ECMWF/ERA5_LAND/DAILY_AGGR") \
+        .filterBounds(point) \
+        .filterDate(start, end)
+
+    # 🔥 Check if empty
+    size = collection.size().getInfo()
+
+    if size == 0:
+        # fallback → extend range
+        start = (today - datetime.timedelta(days=15)).strftime('%Y-%m-%d')
+
+        collection = ee.ImageCollection("ECMWF/ERA5_LAND/DAILY_AGGR") \
+            .filterBounds(point) \
+            .filterDate(start, end)
+
+    image = collection.sort('system:time_start', False).first()
+
+    # 🔥 STILL safety check
+    if image is None:
+        return 25, 35  # fallback values
+
+    values = image.reduceRegion(
+        reducer=ee.Reducer.first(),
+        geometry=point,
+        scale=1000
+    ).getInfo()
+
+    temp_min = values.get('temperature_2m_min', 300) - 273.15
+    temp_max = values.get('temperature_2m_max', 300) - 273.15
+
+    return temp_min, temp_max
+
+
+# =========================
+# 🚀 API ROUTES
+# =========================
+@app.route('/')
+def home():
+    return "Geo-AI Soil Intelligence API Running 🚀"
+
+
+@app.route('/predict', methods=['POST'])
+def predict():
+    try:
+        data = request.json
+        lat = data['lat']
+        lon = data['lon']
+    
+        # 🔥 Fetch REAL data
+        ndvi = get_ndvi(lat, lon)
+        elevation = get_elevation(lat, lon)
+        rainfall = get_rainfall(lat, lon)
+        min_temp, max_temp = get_temperature(lat, lon)
+
+        # ⚠️ Temporary assumptions
+        humidity = 80
+        slope = 2
+
+        # Feature array (same order as training)
+        features = np.array([[lat, lon, elevation, slope, rainfall,
+                              min_temp, max_temp, humidity, ndvi]])
+
+        prediction = model.predict(features)[0]
+
+        labels = ['N','P','K','Ca','Mg','S','Zn','Fe','Mn','Cu','B','pH','EC','Org_C']
+
+        result = {label: float(value) for label, value in zip(labels, prediction)}
+
+        # Add satellite data also in response
+        result.update({
+            "NDVI": ndvi,
+            "Elevation": elevation,
+            "Rainfall": rainfall,
+            "Min_Temp": min_temp,
+            "Max_Temp": max_temp
+        })
+
+        crop = recommend_crop(result)
+        result["Crop_Recommendation"] = crop
+        return jsonify(result)
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+# =========================
+# ▶️ RUN APP
+# =========================
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
