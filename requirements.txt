@@ -5,3 +5,4 @@ joblib
 earthengine-api
 gunicorn
 scikit-learn
+xgboost
