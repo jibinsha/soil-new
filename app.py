@@ -8,8 +8,18 @@ import datetime
 app = Flask(__name__)   # ✅ FIRST create app
 CORS(app)  
 
-# ✅ Initialize Google Earth Engine
-ee.Initialize(project='soil-nutrient-ai')  # 🔥 replace this
+import os
+import json
+from google.oauth2 import service_account
+
+credentials_dict = json.loads(os.environ.get("GOOGLE_CREDENTIALS"))
+
+credentials = service_account.Credentials.from_service_account_info(
+    credentials_dict,
+    scopes=['https://www.googleapis.com/auth/cloud-platform']
+)
+
+ee.Initialize(credentials)
 
 # ✅ Load trained ML model
 model = joblib.load("soil_model.pkl")
