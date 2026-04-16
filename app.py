@@ -151,8 +151,93 @@ def get_temperature(lat, lon):
     temp_max = values.get('temperature_2m_max', 300) - 273.15
 
     return temp_min, temp_max
+# CROP RECOMMENDATION
+crop_database = [
+
+    # 🌾 FIELD CROPS
+    {"name": "Rice", "N": (80,150), "P": (40,80), "K": (40,80),
+     "rainfall": (1000,2500), "temp": (20,35)},
+
+    {"name": "Maize", "N": (120,200), "P": (50,100), "K": (50,100),
+     "rainfall": (500,1200), "temp": (18,32)},
+
+    {"name": "Groundnut", "N": (20,60), "P": (40,80), "K": (40,80),
+     "rainfall": (500,1000), "temp": (25,35)},
+
+    {"name": "Pulses", "N": (20,50), "P": (30,60), "K": (30,60),
+     "rainfall": (400,800), "temp": (20,30)},
 
 
+    # 🍌 HORTICULTURE
+    {"name": "Banana", "N": (200,300), "P": (60,100), "K": (200,300),
+     "rainfall": (1000,3000), "temp": (20,35)},
+
+    {"name": "Mango", "N": (100,200), "P": (50,100), "K": (100,200),
+     "rainfall": (750,2500), "temp": (24,35)},
+
+    {"name": "Papaya", "N": (150,250), "P": (60,100), "K": (150,250),
+     "rainfall": (1000,2000), "temp": (22,35)},
+
+    {"name": "Vegetables", "N": (100,200), "P": (50,100), "K": (100,200),
+     "rainfall": (600,1500), "temp": (20,35)},
+
+
+    # 🌿 PLANTATION CROPS (KERALA CORE)
+    {"name": "Rubber", "N": (50,100), "P": (25,50), "K": (50,100),
+     "rainfall": (2000,3500), "temp": (25,35)},
+
+    {"name": "Coffee", "N": (100,150), "P": (50,80), "K": (100,150),
+     "rainfall": (1500,2500), "temp": (18,28)},
+
+    {"name": "Tea", "N": (100,200), "P": (40,80), "K": (100,200),
+     "rainfall": (1500,3000), "temp": (18,25)},
+
+    {"name": "Cardamom", "N": (75,150), "P": (40,75), "K": (75,150),
+     "rainfall": (1500,3000), "temp": (18,28)},
+
+    {"name": "Black Pepper", "N": (100,150), "P": (50,100), "K": (100,150),
+     "rainfall": (2000,3000), "temp": (23,32)},
+
+
+    # 🥥 TREE CROPS
+    {"name": "Coconut", "N": (100,200), "P": (40,80), "K": (120,200),
+     "rainfall": (1000,3000), "temp": (20,35)},
+
+    {"name": "Arecanut", "N": (100,200), "P": (40,80), "K": (100,200),
+     "rainfall": (1500,3000), "temp": (20,35)}
+]
+def score_range(value, low, high):
+    if low <= value <= high:
+        return 1
+    else:
+        return max(0, 1 - abs(value - (low+high)/2) / (high-low))
+
+
+def recommend_crop(data):
+    N = data.get("N", 0)
+    P = data.get("P", 0)
+    K = data.get("K", 0)
+    rainfall = data.get("Rainfall", 0)
+    temp = data.get("Max_Temp", 30)
+
+    results = []
+
+    for crop in crop_database:
+        score = 0
+        score += score_range(N, *crop["N"])
+        score += score_range(P, *crop["P"])
+        score += score_range(K, *crop["K"])
+        score += score_range(rainfall, *crop["rainfall"])
+        score += score_range(temp, *crop["temp"])
+
+        results.append({
+            "crop": crop["name"],
+            "score": round(score,2)
+        })
+
+    results = sorted(results, key=lambda x: x["score"], reverse=True)
+
+    return results[:4]
 # =========================
 # 🚀 API ROUTES
 # =========================
@@ -197,8 +282,8 @@ def predict():
             "Max_Temp": max_temp
         })
 
-        crop = recommend_crop(result)
-        result["Crop_Recommendation"] = crop
+        recommendations = recommend_crop(result)
+        result["Crop_Recommendation"] = recommendations
         return jsonify(result)
 
     except Exception as e:
