@@ -87,8 +87,20 @@ def get_elevation(lat, lon):
     )
 
     return value.getInfo().get('elevation', 0)
+#SLOPE ######
+def get_slope(lat, lon):
+    point = ee.Geometry.Point([lon, lat])
 
+    dem = ee.Image("USGS/SRTMGL1_003")
+    slope = ee.Terrain.slope(dem)
 
+    value = slope.reduceRegion(
+        reducer=ee.Reducer.mean(),
+        geometry=point,
+        scale=30
+    )
+
+    return value.getInfo().get('slope', 2)
 # =========================
 # 🌧️ Rainfall (Last 7 days)
 # =========================
@@ -156,55 +168,70 @@ crop_database = [
 
     # 🌾 FIELD CROPS
     {"name": "Rice", "N": (80,150), "P": (40,80), "K": (40,80),
-     "rainfall": (1000,2500), "temp": (20,35)},
+     "rainfall": (1000,2500), "temp": (20,35),
+     "elevation": (0, 500), "slope": (0, 5)},
 
     {"name": "Maize", "N": (120,200), "P": (50,100), "K": (50,100),
-     "rainfall": (500,1200), "temp": (18,32)},
+     "rainfall": (500,1200), "temp": (18,32),
+     "elevation": (0, 1000), "slope": (0, 8)},
 
     {"name": "Groundnut", "N": (20,60), "P": (40,80), "K": (40,80),
-     "rainfall": (500,1000), "temp": (25,35)},
+     "rainfall": (500,1000), "temp": (25,35),
+     "elevation": (0, 600), "slope": (0, 5)},
 
     {"name": "Pulses", "N": (20,50), "P": (30,60), "K": (30,60),
-     "rainfall": (400,800), "temp": (20,30)},
+     "rainfall": (400,800), "temp": (20,30),
+     "elevation": (0, 800), "slope": (0, 6)},
 
 
     # 🍌 HORTICULTURE
     {"name": "Banana", "N": (200,300), "P": (60,100), "K": (200,300),
-     "rainfall": (1000,3000), "temp": (20,35)},
+     "rainfall": (1000,3000), "temp": (20,35),
+     "elevation": (0, 1200), "slope": (0, 8)},
 
     {"name": "Mango", "N": (100,200), "P": (50,100), "K": (100,200),
-     "rainfall": (750,2500), "temp": (24,35)},
+     "rainfall": (750,2500), "temp": (24,35),
+     "elevation": (0, 1000), "slope": (0, 10)},
 
     {"name": "Papaya", "N": (150,250), "P": (60,100), "K": (150,250),
-     "rainfall": (1000,2000), "temp": (22,35)},
+     "rainfall": (1000,2000), "temp": (22,35),
+     "elevation": (0, 800), "slope": (0, 6)},
 
     {"name": "Vegetables", "N": (100,200), "P": (50,100), "K": (100,200),
-     "rainfall": (600,1500), "temp": (20,35)},
+     "rainfall": (600,1500), "temp": (20,35),
+     "elevation": (0, 1200), "slope": (0, 10)},
 
 
-    # 🌿 PLANTATION CROPS (KERALA CORE)
+    # 🌿 PLANTATION CROPS
     {"name": "Rubber", "N": (50,100), "P": (25,50), "K": (50,100),
-     "rainfall": (2000,3500), "temp": (25,35)},
+     "rainfall": (2000,3500), "temp": (25,35),
+     "elevation": (0, 600), "slope": (0, 15)},
 
     {"name": "Coffee", "N": (100,150), "P": (50,80), "K": (100,150),
-     "rainfall": (1500,2500), "temp": (18,28)},
+     "rainfall": (1500,2500), "temp": (18,28),
+     "elevation": (600, 1600), "slope": (5, 25)},
 
     {"name": "Tea", "N": (100,200), "P": (40,80), "K": (100,200),
-     "rainfall": (1500,3000), "temp": (18,25)},
+     "rainfall": (1500,3000), "temp": (18,25),
+     "elevation": (1000, 2200), "slope": (10, 30)},
 
     {"name": "Cardamom", "N": (75,150), "P": (40,75), "K": (75,150),
-     "rainfall": (1500,3000), "temp": (18,28)},
+     "rainfall": (1500,3000), "temp": (18,28),
+     "elevation": (800, 1600), "slope": (10, 30)},
 
     {"name": "Black Pepper", "N": (100,150), "P": (50,100), "K": (100,150),
-     "rainfall": (2000,3000), "temp": (23,32)},
+     "rainfall": (2000,3000), "temp": (23,32),
+     "elevation": (0, 1200), "slope": (5, 25)},
 
 
     # 🥥 TREE CROPS
     {"name": "Coconut", "N": (100,200), "P": (40,80), "K": (120,200),
-     "rainfall": (1000,3000), "temp": (20,35)},
+     "rainfall": (1000,3000), "temp": (20,35),
+     "elevation": (0, 600), "slope": (0, 8)},
 
     {"name": "Arecanut", "N": (100,200), "P": (40,80), "K": (100,200),
-     "rainfall": (1500,3000), "temp": (20,35)}
+     "rainfall": (1500,3000), "temp": (20,35),
+     "elevation": (0, 800), "slope": (0, 10)}
 ]
 def score_range(value, low, high):
     if low <= value <= high:
@@ -219,7 +246,9 @@ def recommend_crop(data):
     K = data.get("K", 0)
     rainfall = data.get("Rainfall", 0)
     temp = data.get("Max_Temp", 30)
-
+    elevation = data.get("Elevation", 0)
+    slope = data.get("Slope", 2)
+    
     results = []
 
     for crop in crop_database:
@@ -229,6 +258,8 @@ def recommend_crop(data):
         score += score_range(K, *crop["K"])
         score += score_range(rainfall, *crop["rainfall"])
         score += score_range(temp, *crop["temp"])
+        score += score_range(elevation, *crop["elevation"])
+        score += score_range(slope, *crop["slope"])
 
         results.append({
             "crop": crop["name"],
@@ -258,7 +289,7 @@ def predict():
         elevation = get_elevation(lat, lon)
         rainfall = get_rainfall(lat, lon)
         min_temp, max_temp = get_temperature(lat, lon)
-
+        slope = get_slope(lat, lon)
         # ⚠️ Temporary assumptions
         humidity = 80
         slope = 2
