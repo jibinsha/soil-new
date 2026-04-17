@@ -341,7 +341,7 @@ def predict():
         result.update({
             "NDVI": ndvi,
             "Elevation": elevation,
-            "Rainfall": rainfall,
+            "Rainfall_7day": rainfall,
             "Min_Temp": min_temp,
             "Max_Temp": max_temp
             "Annual_Rainfall": annual_rainfall,
