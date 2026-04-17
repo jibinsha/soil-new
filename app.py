@@ -168,7 +168,7 @@ def get_annual_rainfall(lat, lon):
     point = ee.Geometry.Point([lon, lat])
 
     today = datetime.date.today()
-    start = (today - datetime.timedelta(days=365)).strftime('%Y-%m-%d')
+    start = (today - datetime.timedelta(days=180)).strftime('%Y-%m-%d')
     end = today.strftime('%Y-%m-%d')
 
     collection = ee.ImageCollection("UCSB-CHG/CHIRPS/DAILY") \
@@ -188,7 +188,7 @@ def get_mean_temperature(lat, lon):
     point = ee.Geometry.Point([lon, lat])
 
     today = datetime.date.today()
-    start = (today - datetime.timedelta(days=365)).strftime('%Y-%m-%d')
+    start = (today - datetime.timedelta(days=180)).strftime('%Y-%m-%d')
     end = today.strftime('%Y-%m-%d')
 
     collection = ee.ImageCollection("ECMWF/ERA5_LAND/DAILY_AGGR") \
