@@ -122,7 +122,7 @@ def get_rainfall(lat, lon):
         geometry=point,
         scale=5000
     )
-
+    
     return value.getInfo().get('precipitation', 0)
 
 def get_temperature(lat, lon):
@@ -163,6 +163,50 @@ def get_temperature(lat, lon):
     temp_max = values.get('temperature_2m_max', 300) - 273.15
 
     return temp_min, temp_max
+    #RAINFALL AND TEM DATA FOR CROP RECOMMENDATION 
+ def get_annual_rainfall(lat, lon):
+    point = ee.Geometry.Point([lon, lat])
+
+    today = datetime.date.today()
+    start = (today - datetime.timedelta(days=365)).strftime('%Y-%m-%d')
+    end = today.strftime('%Y-%m-%d')
+
+    collection = ee.ImageCollection("UCSB-CHG/CHIRPS/DAILY") \
+        .filterBounds(point) \
+        .filterDate(start, end)
+
+    rainfall = collection.sum()
+
+    value = rainfall.reduceRegion(
+        reducer=ee.Reducer.mean(),
+        geometry=point,
+        scale=5000
+    )
+
+    return value.getInfo().get('annual_rainfall', 0)
+def get_mean_temperature(lat, lon):
+    point = ee.Geometry.Point([lon, lat])
+
+    today = datetime.date.today()
+    start = (today - datetime.timedelta(days=365)).strftime('%Y-%m-%d')
+    end = today.strftime('%Y-%m-%d')
+
+    collection = ee.ImageCollection("ECMWF/ERA5_LAND/DAILY_AGGR") \
+        .filterBounds(point) \
+        .filterDate(start, end)
+
+    image = collection.mean()
+
+    values = image.reduceRegion(
+        reducer=ee.Reducer.mean(),
+        geometry=point,
+        scale=1000
+    ).getInfo()
+
+    mean_temperature = values.get('temperature_2m', 300) - 273.15
+
+    return mean_temperature
+
 # CROP RECOMMENDATION
 crop_database = [
 
@@ -238,17 +282,17 @@ def score_range(value, low, high):
 
 def recommend_crop(data):
     
-    rainfall = data.get("Rainfall", 0)
-    temp = data.get("Max_Temp", 30)
+    rainfall = data.get("annual_rainfall", 2000)
+    temp = data.get("mean_temperature", 28)
     elevation = data.get("Elevation", 0)
-    slope = data.get("Slope", 2)
+    slope = data.get("Slope", 5)
     
     results = []
 
     for crop in crop_database:
         score = 0
-        score += score_range(rainfall, *crop["rainfall"])
-        score += score_range(temp, *crop["temp"])
+        score += score_range(rainfall, *crop["annual_rainfall"])
+        score += score_range(temp, *crop["mean_temperature"])
         score += score_range(elevation, *crop["elevation"])
         score += score_range(slope, *crop["slope"])
 
