@@ -350,8 +350,14 @@ def predict():
             "Max_Temp": max_temp
         })
 
-        recommendations = recommend_crop(result)
-        result["Crop_Recommendation"] = recommendations
+        crop_input = {
+            "annual_rainfall": annual_rainfall,
+            "mean_temperature": mean_temp,
+            "Elevation": elevation,
+            "Slope": slope
+        }
+
+        recommendations = recommend_crop(crop_input)
         return jsonify(result)
 
     except Exception as e:
