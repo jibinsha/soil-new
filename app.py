@@ -163,8 +163,8 @@ def get_temperature(lat, lon):
     temp_max = values.get('temperature_2m_max', 300) - 273.15
 
     return temp_min, temp_max
-    #RAINFALL AND TEM DATA FOR CROP RECOMMENDATION 
- def get_annual_rainfall(lat, lon):
+#RAINFALL AND TEM DATA FOR CROP RECOMMENDATION 
+def get_annual_rainfall(lat, lon):
     point = ee.Geometry.Point([lon, lat])
 
     today = datetime.date.today()
