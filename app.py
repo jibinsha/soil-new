@@ -183,7 +183,7 @@ def get_annual_rainfall(lat, lon):
         scale=5000
     )
 
-    return value.getInfo().get('annual_rainfall', 0)
+   return value.getInfo().get('precipitation', 2000)
 def get_mean_temperature(lat, lon):
     point = ee.Geometry.Point([lon, lat])
 
@@ -357,6 +357,9 @@ def predict():
         }
 
         recommendations = recommend_crop(crop_input)
+
+        result["Crop_Recommendation"] = recommendations
+
         return jsonify(result)
 
     except Exception as e:
