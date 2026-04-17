@@ -264,13 +264,21 @@ map.on('click', function(e) {
 
 		</div>
         <div class="card">
-            <h3>🌍 Satellite Data</h3>
-            <div class="row"><span class="label">NDVI</span><span class="value">${data.NDVI?.toFixed(2)}</span></div>
-            <div class="row"><span class="label">Elevation</span><span class="value">${data.Elevation?.toFixed(0)} m</span></div>
-            <div class="row"><span class="label">Rainfall</span><span class="value">${data.Rainfall?.toFixed(2)}</span></div>
-            <div class="row"><span class="label">Temp Min</span><span class="value">${data.Min_Temp?.toFixed(2)} °C</span></div>
-            <div class="row"><span class="label">Temp Max</span><span class="value">${data.Max_Temp?.toFixed(2)} °C</span></div>
-        </div>
+    		<h3>🌍 Satellite & Climate Data</h3>
+
+    		<div class="row"><span class="label">NDVI</span><span class="value">${data.NDVI?.toFixed(2)}</span></div>
+
+    		<div class="row"><span class="label">Elevation</span><span class="value">${data.Elevation?.toFixed(0)} m</span></div>
+
+    		<div class="row"><span class="label">7-Day Rainfall</span><span class="value">${data.Rainfall_7day?.toFixed(2)} mm</span></div>
+
+    		<div class="row"><span class="label">Annual Rainfall</span><span class="value">${data.Annual_Rainfall?.toFixed(0)} mm</span></div>
+
+    		<div class="row"><span class="label">Today Temp</span><span class="value">${data.Min_Temp?.toFixed(1)} - ${data.Max_Temp?.toFixed(1)} °C</span></div>
+
+    		<div class="row"><span class="label">Mean Temperature</span><span class="value">${data.Mean_Temperature?.toFixed(1)} °C</span></div>
+
+		</div>
         `;
     });
 
