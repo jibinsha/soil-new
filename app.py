@@ -167,9 +167,8 @@ def get_temperature(lat, lon):
 def get_annual_rainfall(lat, lon):
     point = ee.Geometry.Point([lon, lat])
 
-    today = datetime.date.today()
-    start = (today - datetime.timedelta(days=180)).strftime('%Y-%m-%d')
-    end = today.strftime('%Y-%m-%d')
+    start = '2025-01-01'
+    end = '2025-12-31'
 
     collection = ee.ImageCollection("UCSB-CHG/CHIRPS/DAILY") \
         .filterBounds(point) \
@@ -188,9 +187,8 @@ def get_annual_rainfall(lat, lon):
 def get_mean_temperature(lat, lon):
     point = ee.Geometry.Point([lon, lat])
 
-    today = datetime.date.today()
-    start = (today - datetime.timedelta(days=180)).strftime('%Y-%m-%d')
-    end = today.strftime('%Y-%m-%d')
+    start = '2025-01-01'
+    end = '2025-12-31'
 
     collection = ee.ImageCollection("ECMWF/ERA5_LAND/DAILY_AGGR") \
         .filterBounds(point) \
@@ -204,9 +202,7 @@ def get_mean_temperature(lat, lon):
         scale=1000
     ).getInfo()
 
-    mean_temperature = values.get('temperature_2m', 300) - 273.15
-
-    return mean_temperature
+    return values.get('temperature_2m', 300) - 273.15
 
 # CROP RECOMMENDATION
 crop_database = [
