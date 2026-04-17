@@ -167,8 +167,8 @@ def get_temperature(lat, lon):
 def get_annual_rainfall(lat, lon):
     point = ee.Geometry.Point([lon, lat])
 
-    start = '2025-01-01'
-    end = '2025-12-31'
+    start = '2024-01-01'
+    end = '2024-12-31'
 
     collection = ee.ImageCollection("UCSB-CHG/CHIRPS/DAILY") \
         .filterBounds(point) \
@@ -187,8 +187,8 @@ def get_annual_rainfall(lat, lon):
 def get_mean_temperature(lat, lon):
     point = ee.Geometry.Point([lon, lat])
 
-    start = '2025-01-01'
-    end = '2025-12-31'
+    start = '2024-01-01'
+    end = '2024-12-31'
 
     collection = ee.ImageCollection("ECMWF/ERA5_LAND/DAILY_AGGR") \
         .filterBounds(point) \
