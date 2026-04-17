@@ -211,66 +211,66 @@ def get_mean_temperature(lat, lon):
 crop_database = [
 
     {"name": "Rice",
-     "rainfall": (1000,2500), "temp": (20,35),
+     "annual_rainfall": (1000,2500), "mean_temperature": (20,35),
      "elevation": (0, 500), "slope": (0, 5)},
 
     {"name": "Maize",
-     "rainfall": (500,1200), "temp": (18,32),
+     "annual_rainfall": (500,1200), "mean_temperature": (18,32),
      "elevation": (0, 1000), "slope": (0, 8)},
 
     {"name": "Groundnut",
-     "rainfall": (500,1000), "temp": (25,35),
+     "annual_rainfall": (500,1000), "mean_temperature": (25,35),
      "elevation": (0, 600), "slope": (0, 5)},
 
     {"name": "Pulses",
-     "rainfall": (400,800), "temp": (20,30),
+     "annual_rainfall": (400,800), "mean_temperature": (20,30),
      "elevation": (0, 800), "slope": (0, 6)},
 
 
     {"name": "Banana",
-     "rainfall": (1000,3000), "temp": (20,35),
+     "annual_rainfall": (1000,3000), "mean_temperature": (20,35),
      "elevation": (0, 1200), "slope": (0, 8)},
 
     {"name": "Mango",
-     "rainfall": (750,2500), "temp": (24,35),
+     "annual_rainfall": (750,2500), "mean_temperature": (24,35),
      "elevation": (0, 1000), "slope": (0, 10)},
 
     {"name": "Papaya",
-     "rainfall": (1000,2000), "temp": (22,35),
+     "annual_rainfall": (1000,2000), "mean_temperature": (22,35),
      "elevation": (0, 800), "slope": (0, 6)},
 
     {"name": "Vegetables",
-     "rainfall": (600,1500), "temp": (20,35),
+     "annual_rainfall": (600,1500), "mean_temperature": (20,35),
      "elevation": (0, 1200), "slope": (0, 10)},
 
 
     {"name": "Rubber",
-     "rainfall": (2000,3500), "temp": (25,35),
+     "annual_rainfall": (2000,3500), "mean_temperature": (25,35),
      "elevation": (0, 600), "slope": (0, 15)},
 
     {"name": "Coffee",
-     "rainfall": (1500,2500), "temp": (18,28),
+     "annual_rainfall": (1500,2500), "mean_temperature": (18,28),
      "elevation": (600, 1600), "slope": (5, 25)},
 
     {"name": "Tea",
-     "rainfall": (1500,3000), "temp": (18,25),
+     "annual_rainfall": (1500,3000), "mean_temperature": (18,25),
      "elevation": (1000, 2200), "slope": (10, 30)},
 
     {"name": "Cardamom",
-     "rainfall": (1500,3000), "temp": (18,28),
+     "annual_rainfall": (1500,3000), "mean_temperature": (18,28),
      "elevation": (800, 1600), "slope": (10, 30)},
 
     {"name": "Black Pepper",
-     "rainfall": (2000,3000), "temp": (23,32),
+     "annual_rainfall": (2000,3000), "mean_temperature": (23,32),
      "elevation": (0, 1200), "slope": (5, 25)},
 
 
     {"name": "Coconut",
-     "rainfall": (1000,3000), "temp": (20,35),
+     "annual_rainfall": (1000,3000), "mean_temperature": (20,35),
      "elevation": (0, 600), "slope": (0, 8)},
 
     {"name": "Arecanut",
-     "rainfall": (1500,3000), "temp": (20,35),
+     "annual_rainfall": (1500,3000), "mean_temperature": (20,35),
      "elevation": (0, 800), "slope": (0, 10)}
 ]
 def score_range(value, low, high):
@@ -325,6 +325,8 @@ def predict():
         rainfall = get_rainfall(lat, lon)
         min_temp, max_temp = get_temperature(lat, lon)
         slope = get_slope(lat, lon)
+        annual_rainfall = get_annual_rainfall(lat, lon)
+        mean_temp = get_mean_temperature(lat, lon)
         # ⚠️ Temporary assumptions
         humidity = 80
         slope = 2
