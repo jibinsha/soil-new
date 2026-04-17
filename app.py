@@ -343,7 +343,7 @@ def predict():
             "Elevation": elevation,
             "Rainfall_7day": rainfall,
             "Min_Temp": min_temp,
-            "Max_Temp": max_temp
+            "Max_Temp": max_temp,
             "Annual_Rainfall": annual_rainfall,
             "Mean_Temperature": mean_temp
         })
