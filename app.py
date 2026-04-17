@@ -183,7 +183,7 @@ def get_annual_rainfall(lat, lon):
         scale=5000
     )
 
-   return value.getInfo().get('precipitation', 2000)
+    return value.getInfo().get('precipitation', 2000)
 def get_mean_temperature(lat, lon):
     point = ee.Geometry.Point([lon, lat])
 
