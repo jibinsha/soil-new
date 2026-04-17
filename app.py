@@ -328,8 +328,7 @@ def predict():
         annual_rainfall = get_annual_rainfall(lat, lon)
         mean_temp = get_mean_temperature(lat, lon)
         # ⚠️ Temporary assumptions
-        humidity = 80
-        slope = 2
+     
 
         # Feature array (same order as training)
         features = np.array([[lat, lon, elevation, slope, rainfall,
